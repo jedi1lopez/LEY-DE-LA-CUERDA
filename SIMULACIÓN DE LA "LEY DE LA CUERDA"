@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+SIMULACIÓN DE LA "LEY DE LA CUERDA" - CASO: CAFÉANDINO
+Autores: PhD Dennis Zavala & MSc. Jetro López
+Institución: Universidad Nacional Experimental Simón Rodríguez (UNESR) - Valencia, Carabobo, Venezuela
+Año: 2025
+Objetivo: Demostrar visual y cuantitativamente cómo gestionar la incertidumbre estructural mediante el modelo ontológico-estocástico propuesto.
+
+Este script simula 30 días de operación de una cafetería usando dos estrategias:
+1. Modelo Tradicional (Planificación Fija)
+2. Modelo "Ley de la Cuerda" (Planificación Estocástica)
+
+Los resultados se muestran en un gráfico interactivo y profesional, con anotaciones y leyendas.
+Basado en la teoría original publicada en: Zavala, D. & López, J. (2025). 
+
+•	Zavala López, D. R., & López Hernández, J. R. (2025). La filosofía y la inteligencia artificial: un diálogo necesario. En N. Romero Pérez, O. Rodríguez, G. García, J. Olivar Aldana, E. Nahmens de González, Y. Anseume & R. Riera Escalona (Compiladores), Compendio de resúmenes de ponencias V Jornadas Nacionales de Investigación 2024 (UNESR): Investigar para la paz y la vida: desde la transdisciplinariedad en tiempos de incertidumbre. Ediciones DP. ISBN 978-980-288-091-1
+•	Zavala, D. R., & López, J. R. (2025). El determinismo y el aprendizaje automático; una perspectiva formal en el contexto del fraude financiero. En N. Ibáñez, W. Aranguren, & K. Torres (Eds.), Inteligencia artificial y disrupción (pp. 39-58). Fondo Editorial FACES UC, Universidad de Carabobo. ISBN electrónico: 978-980-233-886-3
+•	Zavala, D. R., & López, J. R. (2025). La ecuación Q-Learning; una nueva frontera en la toma de decisiones estratégicas en las organizaciones. En N. Ibáñez, W. Aranguren, & K. Torres (Eds.), Inteligencia artificial y disrupción (pp. 61-76). Fondo Editorial FACES UC, Universidad de Carabobo. ISBN electrónico: 978-980-233-886-3
+•	Zavala, D., & López, J. (2025). Integración de la ecuación Q-learning con la tecnología cuántica. En Observador del Conocimiento (Ed.), Edición Especial: Ciencia y Tecnología Cuánticas (Tomo I, Vol. 10, N.° 3, pp. 17–26). Ministerio del Poder Popular para Ciencia y Tecnología. Depósito legal: PP201402DC4456. ISSN: 2343-6212.
+•	Zavala López, D. R., & López Hernández, J. R. (2025). Optimización cuántica de procesos en la industria petrolera venezolana mediante el Q-Learning cuántico (Hacia una nueva era de eficiencia y sostenibilidad). En Memorias de las 1eras Jornadas Técnicas Indesca 2025: Más Allá de la Ciencia (pp. 71–85). Maracaibo, Venezuela: Investigación y Desarrollo, C.A. (Indesca). ISBN: 978-980-8124-00-2.
+
+
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.ticker import MaxNLocator
+
+# ===========================================
+# CONFIGURACIÓN DE LA SIMULACIÓN (LA "CUERDA")
+# ===========================================
+np.random.seed(42)  # Para resultados reproducibles
+
+# Parámetros del modelo ontológico (según Zavala & López, 2025, UNESR)
+demanda_media = 500      # Condición Inicial + Ley Estructural (La "Trayectoria Global")
+desviacion_std = 100     # Parámetro Probabilístico (La "Elasticidad" de la Cuerda)
+dias_a_simular = 30      # Período de observación
+
+# Simulamos la demanda real (las "Fluctuaciones Locales")
+demanda_real = np.random.normal(loc=demanda_media, scale=desviacion_std, size=dias_a_simular)
+# Aseguramos que la demanda no sea negativa (no se venden cafés negativos)
+demanda_real = np.clip(demanda_real, 0, None)
+
+# ==========================
+# ESTRATEGIAS DE GESTIÓN
+# ==========================
+
+# Estrategia 1: Modelo Tradicional (Determinista)
+# Supuesto: La demanda es fija e igual a la media histórica.
+inventario_fijo = np.full(dias_a_simular, demanda_media)
+perdidas_fijas = np.maximum(0, inventario_fijo - demanda_real)  # Cafés que se echan a perder
+faltantes_fijos = np.maximum(0, demanda_real - inventario_fijo) # Clientes que se van insatisfechos
+
+# Estrategia 2: Modelo "Ley de la Cuerda" (Estocástico)
+# Supuesto: Aceptamos la incertidumbre. Preparamos un buffer del 10% sobre la media.
+inventario_cuerda = np.full(dias_a_simular, demanda_media * 1.1)
+perdidas_cuerda = np.maximum(0, inventario_cuerda - demanda_real)
+faltantes_cuerda = np.maximum(0, demanda_real - inventario_cuerda)
+
+# ==========================
+# CÁLCULO DE RESULTADOS
+# ==========================
+total_perdidas_fijas = int(np.sum(perdidas_fijas))
+total_faltantes_fijos = int(np.sum(faltantes_fijos))
+costo_total_fijo = total_perdidas_fijas + total_faltantes_fijos
+
+total_perdidas_cuerda = int(np.sum(perdidas_cuerda))
+total_faltantes_cuerda = int(np.sum(faltantes_cuerda))
+costo_total_cuerda = total_perdidas_cuerda + total_faltantes_cuerda
+
+# Reducción de faltantes (métrica clave de satisfacción del cliente)
+reduccion_faltantes_pct = ((total_faltantes_fijos - total_faltantes_cuerda) / total_faltantes_fijos) * 100
+
+# ==========================
+# GENERACIÓN DEL GRÁFICO
+# ==========================
+plt.style.use('seaborn-v0_8')  # Estilo moderno y limpio
+fig, ax = plt.subplots(figsize=(16, 9))
+
+# --- LÍNEAS PRINCIPALES ---
+# Demanda Real (Fluctuaciones Locales)
+line_demanda = ax.plot(range(1, dias_a_simular+1), demanda_real, 
+                       marker='o', linestyle='-', linewidth=3, markersize=8,
+                       color='#2E8B57', label='Demanda Real (Fluctuación Local)', 
+                       markerfacecolor='white', markeredgecolor='#2E8B57')
+
+# Trayectoria Global (La "Cuerda")
+line_cuerda = ax.axhline(y=demanda_media, color='#FF6347', linestyle='--', linewidth=3,
+                         label='Trayectoria Global (Media = 500)', alpha=0.9)
+
+# Inventario Fijo (Modelo Tradicional)
+line_inv_fijo = ax.plot(range(1, dias_a_simular+1), inventario_fijo, 
+                        marker='s', linestyle='--', linewidth=2, markersize=6,
+                        color='#4682B4', label='Inventario Fijo (500 unidades)', 
+                        alpha=0.8)
+
+# Inventario "Ley de la Cuerda"
+line_inv_cuerda = ax.plot(range(1, dias_a_simular+1), inventario_cuerda, 
+                          marker='^', linestyle='--', linewidth=2, markersize=7,
+                          color='#DAA520', label='Inventario "Ley de la Cuerda" (550 unidades)', 
+                          alpha=0.8)
+
+# --- SOMBREADO: RANGO DE INCERTIDUMBRE (±1 desviación estándar) ---
+ax.axhspan(demanda_media - desviacion_std, demanda_media + desviacion_std, 
+           alpha=0.15, color='#FF6347', label='Rango de Incertidumbre (±1σ)')
+
+# --- ANOTACIONES Y TEXTO ---
+# Título Principal
+ax.set_title('LA LEY DE LA CUERDA EN ACCIÓN\nSimulación de Gestión en "CaféAndino" (30 días)', 
+             fontsize=20, fontweight='bold', pad=30, color='#333333')
+
+# Subtítulo con Resultados Clave
+resultados_texto = (
+    f"► MODELO FIJO: Pérdidas={total_perdidas_fijas} | Faltantes={total_faltantes_fijos} | Costo Total={costo_total_fijo}\n"
+    f"► MODELO CUERDA: Pérdidas={total_perdidas_cuerda} | Faltantes={total_faltantes_cuerda} | Costo Total={costo_total_cuerda}\n"
+    f"► ¡REDUCCIÓN DE FALTANTES: {reduccion_faltantes_pct:.1f}%! (Mayor satisfacción del cliente)"
+)
+ax.text(0.02, 0.97, resultados_texto, transform=ax.transAxes, fontsize=12, 
+        verticalalignment='top', bbox=dict(boxstyle="round,pad=0.5", facecolor="wheat", alpha=0.5),
+        fontweight='bold')
+
+# Etiquetas de Ejes
+ax.set_xlabel('Día del Mes', fontsize=14, fontweight='bold')
+ax.set_ylabel('Número de Cafés', fontsize=14, fontweight='bold')
+
+# Leyenda Principal
+ax.legend(loc='upper left', fontsize=12, frameon=True, fancybox=True, shadow=True)
+
+# Cuadrícula
+ax.grid(True, linestyle='--', alpha=0.6, which='both')
+
+# Asegurar que los días sean enteros en el eje X
+ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+# --- NOTAS ADICIONALES (Leyenda Explicativa) ---
+nota1 = mpatches.Patch(color='none', label='=== INTERPRETACIÓN (Zavala & López, 2025, UNESR) ===')
+nota2 = mpatches.Patch(color='none', label='• La "Cuerda" (línea roja) es la tendencia estructural inamovible.')
+nota3 = mpatches.Patch(color='none', label='• Las fluctuaciones (puntos verdes) son decisiones, crisis o innovaciones locales.')
+nota4 = mpatches.Patch(color='none', label='• El modelo tradicional (azul) es rígido y genera altos faltantes.')
+nota5 = mpatches.Patch(color='none', label=f'• El modelo "Cuerda" (ámbar) reduce faltantes en {reduccion_faltantes_pct:.1f}%.')
+nota6 = mpatches.Patch(color='none', label='• ¡La gestión no es controlar el caos, sino bailar con él dentro de la cuerda!')
+
+ax.legend(handles=[nota1, nota2, nota3, nota4, nota5, nota6], 
+          loc='lower right', fontsize=10, frameon=True, fancybox=True, 
+          title="NOTAS ÉTICAS Y DE GESTIÓN", title_fontsize=11)
+
+# --- PIE DE GRÁFICO: METADATOS ACADÉMICOS ---
+fig.text(0.5, 0.01, 
+         'Fuente: Simulación basada en "La Ley de la Cuerda" (Zavala & López, 2025, UNESR - Venezuela). ', 
+         ha='center', fontsize=9, style='italic', color='#555555')
+
+# Ajuste final
+plt.tight_layout(rect=[0, 0.03, 1, 0.97])  # Deja espacio para el pie
+
+# Mostrar el gráfico
+plt.show()
+
+# ==========================
+# IMPRESIÓN DE RESULTADOS EN CONSOLA
+# ==========================
+print("\n" + "="*80)
+print("           RESULTADOS DE LA SIMULACIÓN: LA LEY DE LA CUERDA")
+print("="*80)
+print("Caso: 'CaféAndino' - Cadena de cafeterías en entorno VUCA")
+print("Autores: PhD Dennis Zavala & MSc. Jetro López")
+print("Institución: Universidad Nacional Experimental Simón Rodríguez (UNESR)")
+print("Ubicación: Valencia, Estado Carabobo, Venezuela")
+print("Año de referencia: 2025 ")
+print("-" * 80)
+print(f"Estrategia Fija (Modelo Tradicional):")
+print(f"  - Cafés Desperdiciados (Pérdidas):      {total_perdidas_fijas:>4}")
+print(f"  - Clientes Insatisfechos (Faltantes):   {total_faltantes_fijos:>4}")
+print(f"  - Costo Operativo Total*:               {costo_total_fijo:>4}")
+print()
+print(f"Estrategia 'Ley de la Cuerda' (Modelo Estocástico):")
+print(f"  - Cafés Desperdiciados (Pérdidas):      {total_perdidas_cuerda:>4}")
+print(f"  - Clientes Insatisfechos (Faltantes):   {total_faltantes_cuerda:>4}")
+print(f"  - Costo Operativo Total*:               {costo_total_cuerda:>4}")
+print()
+print(f"✨ IMPACTO CLAVE: Reducción de Clientes Insatisfechos = {reduccion_faltantes_pct:.1f}%")
+print()
+print("*Nota: El 'Costo Operativo Total' es la suma de pérdidas + faltantes.")
+print("       En la práctica, el costo de un cliente insatisfecho suele ser mucho mayor")
+print("       que el de un café desperdiciado (pérdida de reputación, lealtad, etc.).")
+print("="*80)
+print("Conclusión: La 'Ley de la Cuerda' transforma la incertidumbre de enemigo a aliado.")
+print("            Se sacrifica un poco de eficiencia operativa por una gran ganancia")
+print("            en resiliencia, ética (satisfacción del cliente) y adaptabilidad.")
+print()
+print("© 2025 Zavala & López, UNESR - Venezuela. Todos los derechos reservados.")
+print("Para citar: Zavala, D. & López, J. (2025). La Ley de la Cuerda: Gestión Estratégica en Entornos VUCA. UNESR.")
+print("="*80)
