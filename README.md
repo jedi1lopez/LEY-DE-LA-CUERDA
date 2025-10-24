@@ -1,6 +1,5 @@
 SIMULACIÓN DE LA "LEY DE LA CUERDA" - CASO: CAFÉANDINO
 Autores: PhD Dennis Zavala & MSc. Jetro López
-Institución: Universidad Nacional Experimental Simón Rodríguez (UNESR) - Valencia, Carabobo, Venezuela
 Año: 2025
 Objetivo: Demostrar visual y cuantitativamente cómo gestionar la incertidumbre estructural mediante el modelo ontológico-estocástico propuesto.
 
